@@ -1,6 +1,6 @@
 %YAML 1.1
 ---
-# Snapcraft Recipe for [Project]
+# Snapcraft Recipe for Bashfuscator
 # ------------------------------
 # This file is in the YAML data serialization format:
 # http://yaml.org
@@ -17,30 +17,30 @@
 # All following comments, including this one, are designed to be stripped
 # before contributing the recipe to the upstream
 
-# [Project], my-awesome-app, my-awesome-app-launch
+# Bashfuscator, bashfuscator, bashfuscator-launch
 # are placeholders text meant to be replaced by appropriate content
-name: my-awesome-app
-title: My Awesome App.
-summary: Single-line elevator pitch for your amazing snap under 79 chars.
+name: bashfuscator
+title: Bashfuscator
+summary: A fully configurable and extendable Bash obfuscation framework
 description: |
-  This is my-awesome-app's description. You have a paragraph or two to tell
-  the most important story about your snap. Keep it under 100 words though,
-  we live in tweetspace and your description wants to look good in the snap
-  store.
+  **This is NOT an official distribution of Bashfuscator, refer https://github.com/Lin-Buo-Ren/bashfuscator-snap/issues for support.**
 
-  This is the demonstration app of the Snapcrafters Template Plus:
-  https://github.com/Lin-Buo-Ren/snapcrafters-template-plus
+  Bashfuscator is a modular and extendable Bash obfuscation framework written in Python 3. It provides numerous different ways of making Bash one-liners or scripts much more difficult to understand. It accomplishes this by generating convoluted, randomized Bash code that at runtime evaluates to the original input and executes it. Bashfuscator makes generating highly obfuscated Bash commands and scripts easy, both from the command line and as a Python library.
+
+  The purpose of this project is to give Red Team the ability to bypass static detections on a Linux system, and the knowledge and tools to write better Bash obfuscation techniques.
+
+  This framework was also developed with Blue Team in mind. With this framework, Blue Team can easily generate thousands of unique obfuscated scripts or commands to help create and test detections of Bash obfuscation.
 
 # The path of icon to represent the snap, relative to the source tree directory
 # Only PNG or SVG image is supported, dimension must be greater than 256x256px
-icon: snap/gui/my-awesome-app.png
+icon: snap/gui/bashfuscator_logo.icon.svg
 
 # The license of this application, in SPDX format
 # NOTE: Currently only supports SPDX 2.1 license expressions, as described in Appendix IV of
 # https://spdx.org/spdx-specification-21-web-version
 # Supported expressions:
 # https://github.com/snapcore/snapd/blob/HEAD/spdx/licenses.go
-#license:
+license: MIT
 
 # Version string just for humans, typically '1.2+git' or '1.3.2'
 # The wrapping single quotes are often required to avoid the version string
@@ -74,7 +74,7 @@ confinement: strict
 # Use `devel` to getting started
 # Flip to `stable` once you determine that the snap is matured, only `stable` grade
 # snaps can be promoted to `candidate` and `stable` channels
-grade: stable
+grade: devel
 
 # Run `snapcraft help sources` for supported keywords on pulling a part's source ingredients
 # Run `snapcraft plugins` for supported build helper plugins
@@ -130,26 +130,16 @@ parts:
     #
     #- locales-all
 
-  # Remote part for support of various desktop technologies
-  # Refer: https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
-  desktop-gnome-platform:
-    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
-    source-depth: 1
-    source-subdir: gtk
-
-    plugin: make
-    build-packages:
-    - gcc
-    override-build: |
-      snapcraftctl build
-      mkdir -pv $SNAPCRAFT_PART_INSTALL/gnome-platform
-
-  # Integrate custom dialogs in your snap - doc - snapcraft.io
-  # https://forum.snapcraft.io/t/integrate-custom-dialogs-in-your-snap/10825
-  zenity-integration:
+  # Check out the tagged release revision if it isn't promoted to the stable channel
+  # https://forum.snapcraft.io/t/selective-checkout-check-out-the-tagged-release-revision-if-it-isnt-promoted-to-the-stable-channel/10617
+  selective-checkout:
     plugin: nil
+    build-packages:
+    - git
     stage-snaps:
-    - zenity-integration
+    - selective-checkout
+    prime:
+    - -*
 
   main:
     after:
@@ -159,54 +149,66 @@ parts:
     # for override-pull script
     - scriptlets
 
-    source: .
-    #source-type:
-    #source-branch:
-    #source-tag:
-    #source-depth:
+    - selective-checkout
+
+    source: https://github.com/Bashfuscator/Bashfuscator.git
+    #source-depth: 100
+    source-depth: 1
+
     override-pull: |
       set -o nounset
 
       snapcraftctl pull
+      "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout
 
-      "${SNAPCRAFT_STAGE}"/scriptlets/main-adopt-info
+    plugin: python
+    python-version: python3
+    #build-packages:
 
-    plugin: dump
-    organize:
-      my-awesome-app: bin/
-    stage:
-    - bin/*
+    #organize:
+      #bashfuscator: bin/
+    #stage:
+    #- bin/*
 
-    override-prime: |
-      set \
-        -o nounset
+    stage-packages:
+      - python3-argcomplete
+      - python3-pyperclip
+      - xclip
 
-      snapcraftctl prime
-
-      "${SNAPCRAFT_STAGE}"/patching/patch-desktop-entries.bash
+    prime:
+    - -etc
+    - -lib/python3*/site-packages/easy_install.py
+    - -lib/python3*/site-packages/pip
+    - -lib/python3*/site-packages/vendor
+    - -lib/python3*/pip-*
+    - -lib/python3*/pkg_resources
+    - -lib/python3*/setuptools*
+    - -lib/python3*/wheel*
+    - -share/X11
+    - -share/applications
+    - -share/binfmts
+    - -share/bug
 
 # Apps that are exposed by the snap package
 # If the _app_name_ is identical with the _snap_name_ it can be directly run
 # with `_snap_name_` or `snap run _snap_name_` commands, otherwise it can only be run
 # via `_snap_name_._app_name_` or `snap run _snap_name_._app_name_`
 apps:
-  my-awesome-app:
+  bashfuscator:
     # The adapter to set up runtime environment at the launch of the snap
     # NOTE: The `command-chain` property is only supported by the `full` adapter
     adapter: full
 
     # An *relative path* to an executable file root from the `prime` directory to be executed, and its command-line arguments
     # NOTE: The right angle bracket at the beginning of the value of the `command` keyword starts a YAML folded style block scalar, refer the following spec document for more info: http://yaml.org/spec/1.2/spec.html#id2796251
-    command: bin/my-awesome-app
+    command: bin/bashfuscator
 
     # The commands that are run, in order, before running the one specified by the `command` key
     command-chain:
-    - bin/desktop-launch
-    - bin/my-awesome-app-launch
+    - bin/bashfuscator-launch
 
-    # If the providing part of the app. has a desktop entry, specify its path relative to the `prime` directory.
-    # If the packaging target doesn't provide a desktop entry, ignore the `desktop` key and implement a desktop entry in `/snap/gui`
-    #desktop: share/applications/my-awesome-app.desktop
+    environment:
+      LANG: C.UTF-8
 
 # Refer the following documentation for asserting interface plugs and slots in a security confined snap:
 # Interface management - doc - snapcraft.io
@@ -215,39 +217,12 @@ apps:
 # https://docs.snapcraft.io/supported-interfaces/7744
 # Non-A/C: Non-autoconnect interface
 plugs:
-  # Common desktop interfaces
-  # https://forum.snapcraft.io/t/the-desktop-interfaces/2042
-  desktop:
-  desktop-legacy:
-  unity7:
-  wayland:
-
-  # GNOME and Gtk runtime via content sharing
-  # https://forum.snapcraft.io/t/desktop-app-support-gtk/6834
-  gnome-3-28-1804:
-    interface: content
-    target: $SNAP/gnome-platform
-    default-provider: gnome-3-28-1804
-
-  # Gtk Common Themes support
-  # https://forum.snapcraft.io/t/how-to-use-the-system-gtk-theme-via-the-gtk-common-themes-snap/6235
-  gsettings:
-  gtk-3-themes:
-    interface: content
-    target: $SNAP/data-dir/themes
-    default-provider: gtk-common-themes
-  icon-themes:
-    interface: content
-    target: $SNAP/data-dir/icons
-    default-provider: gtk-common-themes
-  sound-themes:
-    interface: content
-    target: $SNAP/data-dir/sounds
-    default-provider: gtk-common-themes
+  # Used by xclip
+  x11:
 
   # Regular files access
-  #home:
-  #removable-media: # Non-A/C
+  home:
+  removable-media: # Non-A/C
 
   # Application-specific files access
   # The auto-connection requires store grant
@@ -256,11 +231,11 @@ plugs:
   #user-wide-configs:
     #interface: personal-files
     #read:
-    #- $HOME/.config/my-awesome-app
+    #- $HOME/.config/bashfuscator
   #system-wide-configs:
     #interface: system-files
     #read:
-    #- /etc/my-awesome-app
+    #- /etc/bashfuscator
 
   # Network access
   #network:
